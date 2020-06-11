@@ -1,0 +1,187 @@
+零. all user
+
+1. register email
+
+2. set : watched project
+
+
+
+一、管理员
+1. create group
+
+2. create project
+
+3. create branch ， assign default branch
+
+4. assign access right
+
+5. ssh -p 29418 zwj@zwj.server.com   #zwj用户通过ssh登录zwj.server.com : 29418服务器
+
+6. 删除项目不能使用下面的方法，因为H2数据库中的信息还没有删除  
+	sudo rm -fr /home/gerrit/gerrit_site/git/Sum.git
+    ./.stop-all-server
+	./.start-all-server
+
+7. 如果有多个commit，则必须先Submit前面的commit，后面的才能commit
+
+二、developer响应流程
+0. pull代码
+
+1. 修改代码
+
+2. 提交代码
+
+3. 在gerrit中增加评审人员或replay评审人员的意见
+
+4. 如果增加新模块，最好单独提交该模块，不要和其它模块一起提交。
+
+5. 收到merged邮件，则git pull origin dev
+
+三、developer具体操作
+
+0. git config --global user.name your_name
+    git config --global user.email your_email
+   
+   
+   git config --global user.name  g7
+   git config --global user.email "g7@server.com"
+   git config --global remote.origin.push refs/heads/*:refs/for/*
+#这行命令的意思是，当执行push命令时，将会推送到refs/for/当前head所在的分支上。
+   git config --global --list
+   ssh-keygen -t rsa -C "g7@server.com"
+   cat  /c/Users/Lenovo/.ssh/id_rsa.pub
+
+
+1. login gerrit
+
+2. add ssh key to gerrit
+   
+3. git clone ssh://zwj@zwj.server.com:29418/Sum.git  # @前面的zwj---> you_name
+   git remote -v
+
+4.用scp命令从gerrit服务器上拉取当前用户的hooks文件。 for auto generate Change ID： 
+    gitdir=$(git rev-parse --git-dir); scp -p -P 29418 zwj@zwj.server.com:hooks/commit-msg ${gitdir}/hooks/
+
+	#chmod u+x .git/hooks/commit-msg
+
+     # 修改上一次的commit， 产生多个Patch set, 注意与git commit -m "commit info"的区别
+
+#if not at dev branch then:
+5. git checkout -b dev
+
+6. git pull origin dev
+
+7.	<work>
+
+8. git add main.c
+
+   # 新提交，不会产生Patch set
+   git commit -m "创建main模块
+or    
+	#出现提交注释信息输入框，注意：在原来的提交信息后增加，而不是替换
+	git commit --amend        
+
+9.1) git push origin dev   #  
+  2) Looking at the diff of his change
+  3) Writing inline or summary comments to ask reviewers for advice on particular aspects of the change
+  4) Adding a list of people that should review the change
+
+
+////////////////////////////////////////////////////
+#if error then goto step 5
+
+
+// 如果要取消上一次的commit，则：git reset
+注意：选择当前错误commit的下一个commit id
+11. git reset --mixed b0250a5bae2d16b3fc7e216a702ae5dddca4381e    # --mixed 取消commit，但是修改的代码保持住，可以再次提交新的修改
+   git reset --hard b0250a5bae2d16b3fc7e216a702ae5dddca4381e     # --hard  取消commit，删除修改的代码，不用再次提交新的修改
+
+#endif
+///////////////////////////////////////////////////
+
+12. goto step 7
+
+
+
+
+
+
+13. push with comment:
+
+git push ssh://zwj@zwj.server.com:29418/Sum HEAD:refs/for/dev%m=增加main模块%22
+
+
+git push ssh://zwj@zwj.server.com:29418/Sum HEAD:refs/for/dev%m=增加div模块%publish-comments
+
+
+
+100. 其它问题
+
+1）Push Patch Set
+
+  // fetch and checkout the change
+  // (checkout command copied from change screen)
+  $ git fetch https://gerrithost/myProject refs/changes/74/67374/2 && git checkout FETCH_HEAD
+
+  // rework the change
+  $ git add <path-of-reworked-file>
+  ...
+
+  // amend commit
+  $ git commit --amend
+
+  // push patch set
+  $ git push origin HEAD:refs/for/master
+
+
+
+ git pull ( git pull origin dev)
+
+2）gerrit:  (change closed) Do this to fix issue:
+
+    git commit --amend
+    delete change id
+    save and quit
+	generate new change id : scp -p -P 29418 ....
+    new change id will be added to the commit. it can be verified by git log.
+    push again
+
+
+3) Submit other commet  : rebase 
+
+
+4) 如果出现冲突，则：
+ 
+   在gerrit上abandon或Delete Change自己的提交
+   ？？？需要git reset --mixed , 否则git log 中有 gerrit上abandon的commit
+   git pull origin dev
+   手工解决冲突
+   git add main.c
+   git commit -m "info"
+   git push origin dev
+
+5）如果出现不可恢复的问题，则：
+   在gerrit上Delete Change自己的提交
+   git reset --mixed
+   git add main.c
+   git commit -m "info"
+   git push origin dev
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
